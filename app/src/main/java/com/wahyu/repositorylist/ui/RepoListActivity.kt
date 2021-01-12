@@ -1,10 +1,13 @@
 package com.wahyu.repositorylist.ui
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.wahyu.repositorylist.R
 import com.wahyu.repositorylist.adapter.RepoRecycleListAdapter
 import com.wahyu.repositorylist.databinding.ActivityRepoListBinding
@@ -41,6 +44,7 @@ class RepoListActivity : AppCompatActivity() {
 
         apiService?.getRepositories(user)?.enqueue(object : Callback<List<RepoListResponse>> {
             override fun onFailure(call: Call<List<RepoListResponse>>?, t: Throwable?) {
+                onFailToGetRepos()
             }
 
             override fun onResponse(
@@ -62,9 +66,33 @@ class RepoListActivity : AppCompatActivity() {
                             )
                         }
                         (binding.rvRepo.adapter as RepoRecycleListAdapter).addList(list!!)
-                    }
+                    } else if (response.code() == 404) onNoRepoFound()
                 }
             }
         })
+    }
+
+    private fun onFailToGetRepos() {
+        val backgroundLayout = binding.reposLayout
+        Snackbar.make(backgroundLayout, "Failed to get repositories", Snackbar.LENGTH_INDEFINITE)
+            .setAction("RETRY") {
+                getRepos()
+                toastMethod("No internet connection")
+            }.setActionTextColor(resources.getColor(R.color.backgroundColor)).show()
+    }
+
+    private fun toastMethod(message: String?) {
+        Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun onNoRepoFound(){
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Repository not found!")
+            .setCancelable(false)
+            .setMessage("go back?")
+            .setPositiveButton("Yes") { dialog, id ->
+                super.onBackPressed()}
+            .setNegativeButton("No") {  dialog, id -> }
+        dialog.show()
     }
 }
